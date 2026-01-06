@@ -1,0 +1,27 @@
+# --- Data and Models (Heavy Files) ---
+data/
+models/
+*.dcm
+*.nii
+*.nii.gz
+*.pth
+*.pkl
+
+# --- Python & Environment ---
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+
+# --- IDE & OS Files ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Jupyter Notebooks ---
+.ipynb_checkpoints/

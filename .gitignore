@@ -35,6 +35,10 @@ build/
 dist/
 *.spec
 
+# MLflow logs
+mlruns/
+mlflow.db
+
 # --- IDE, OS & Temporary Files ---
 .vscode/
 .idea/

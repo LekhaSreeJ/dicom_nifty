@@ -18,17 +18,28 @@ def visualize_sample(image_path, title="MRI Sample"):
     plt.show()
 
 def test_preprocess_sample():
-    base_in = "data/1_pep_pipeline"
+    base_in = "data/1_pep_Pipeline"
     base_out = "data/processed"
     classes = ['X1_Normal', 'X2_Stroke', 'X3_MS', 'X4_Mets', 'X5_GBM']
-    
+
     for cls in classes:
-        in_dir = os.path.join(base_in, cls)
-        if not os.path.exists(in_dir): continue
+        in_dir = os.path.join(base_in, cls, "images")
+        print(f"Checking directory: {os.path.abspath(in_dir)}") # Debug 1
         
-        # Pick ONLY THE FIRST file in the folder for testing
+        if not os.path.exists(in_dir):
+            print(f"❌ Folder not found: {in_dir}")
+            continue
+            
         files = [f for f in os.listdir(in_dir) if f.endswith(('.nii', '.nii.gz'))]
-        if not files: continue
+        print(f"Found {len(files)} files in {cls}") # Debug 2
+    
+    # for cls in classes:
+    #     in_dir = os.path.join(base_in, cls)
+    #     if not os.path.exists(in_dir): continue
+        
+    #     # Pick ONLY THE FIRST file in the folder for testing
+    #     files = [f for f in os.listdir(in_dir) if f.endswith(('.nii', '.nii.gz'))]
+    #     if not files: continue
         
         filename = files[0]
         in_path = os.path.join(in_dir, filename)

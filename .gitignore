@@ -1,11 +1,26 @@
-# --- Data and Models (Heavy Files) ---
+# --- PEP Pipeline Data (Heavy Files) ---
 data/
-models/
+dataset/
+raw_data/
+# Even if folders are renamed, safety for medical formats
 *.dcm
 *.nii
 *.nii.gz
+*.hdr
+*.img
+*.mat
+*.csv
+*.xls
+*.xlsx
+
+# --- Models & Weights ---
+models/
 *.pth
+*.h5
+*.onnx
+*.weights
 *.pkl
+*.joblib
 
 # --- Python & Environment ---
 __pycache__/
@@ -16,12 +31,23 @@ __pycache__/
 env/
 venv/
 ENV/
+build/
+dist/
+*.spec
 
-# --- IDE & OS Files ---
+# --- IDE, OS & Temporary Files ---
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+*.log
+temp/
+tmp/
 
 # --- Jupyter Notebooks ---
 .ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# --- Documentation (Optional: ignore if you don't want pdfs/docs in git) ---
+*.pdf
+*.docx

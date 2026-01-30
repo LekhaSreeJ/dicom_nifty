@@ -35,9 +35,13 @@ build/
 dist/
 *.spec
 
-# MLflow logs
+# SQLite databases
+*.db
+*.db-journal
+
+# MLflow specific
 mlruns/
-mlflow.db
+artifacts/
 
 # --- IDE, OS & Temporary Files ---
 .vscode/

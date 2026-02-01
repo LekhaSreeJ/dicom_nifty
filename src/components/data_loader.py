@@ -2,37 +2,54 @@ import os
 import torch
 import SimpleITK as sitk
 from torch.utils.data import Dataset
+import torchvision.transforms as T
 
-class PEPDataset(Dataset):
-    def __init__(self, root_dir):
+class PEPBinaryDataset(Dataset):
+    def __init__(self, root_dir, target_class, is_train=True):
         self.root_dir = root_dir
+        self.target_class = target_class
         self.samples = []
-        # Unga 5 brain cases folders
-        self.classes = ['X1_Normal', 'X2_Stroke', 'X3_MS', 'X4_Mets', 'X5_GBM']
         
-        for idx, cls in enumerate(self.classes):
-            img_path = os.path.join(root_dir, cls, "images")
-            if os.path.exists(img_path):
-                for f in os.listdir(img_path):
-                    if f.endswith('.nii.gz'):
-                        self.samples.append((os.path.join(img_path, f), idx))
-        
-        if len(self.samples) == 0:
-            raise Exception(f"Data folder-la MRI files illai bro! Path check pannunga: {root_dir}")
+        # Iterating through 5 classes (Normal, Stroke, etc.)
+        for cls in os.listdir(root_dir):
+            cls_path = os.path.join(root_dir, cls)
+            if not os.path.isdir(cls_path):
+                continue
+            
+            label = 1 if cls == target_class else 0
+            
+            # Entering the 'images' folder inside each class
+            images_dir = os.path.join(cls_path, "images")
+            
+            if os.path.exists(images_dir):
+                for img_name in os.listdir(images_dir):
+                    if img_name.endswith(('.nii', '.nii.gz')):
+                        img_path = os.path.join(images_dir, img_name)
+                        self.samples.append((img_path, label))
+            else:
+                # Oru velai Normal folder-la direct-ah files irundha (safety check)
+                for img_name in os.listdir(cls_path):
+                    if img_name.endswith(('.nii', '.nii.gz')):
+                        img_path = os.path.join(cls_path, img_name)
+                        self.samples.append((img_path, label))
+
+        self.heavy_transform = T.Compose([
+            T.RandomRotation(degrees=10),
+            T.GaussianBlur(kernel_size=3)
+        ])
+        self.is_train = is_train
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, idx):
         path, label = self.samples[idx]
-        # Reading 3D NIfTI
-        img = sitk.ReadImage(path)
-        img_array = sitk.GetArrayFromImage(img) # Shape: (D, H, W)
-        
-        # PyTorch 3D CNN needs (C, D, H, W)
-        tensor = torch.from_numpy(img_array).unsqueeze(0).float()
-        
-        # Normalize to 0-1 (Important for convergence)
-        tensor = (tensor - tensor.min()) / (tensor.max() - tensor.min() + 1e-8)
-        
-        return tensor, label
+        img = sitk.GetArrayFromImage(sitk.ReadImage(path))
+        img = torch.tensor(img).float().unsqueeze(0)
+
+        # Minority class augmentation (Stroke, Infection, etc.)
+        if self.is_train and label == 1:
+            # Applying 2D transform to 3D slices
+            img = self.heavy_transform(img)
+
+        return img, label

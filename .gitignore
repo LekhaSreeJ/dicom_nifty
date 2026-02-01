@@ -14,8 +14,8 @@ raw_data/
 *.xlsx
 
 # --- Models & Weights ---
-models/
-*.pth
+# models/
+# *.pth
 *.h5
 *.onnx
 *.weights

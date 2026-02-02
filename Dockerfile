@@ -1,18 +1,27 @@
-# Use official Python image
+# Step 1: Base image
 FROM python:3.9-slim
 
-# Set working directory
+# Step 2: Set working directory
 WORKDIR /app
 
-# Copy requirements and install
+# Step 3: Install system dependencies (Medical imaging libraries-ku idhu thevai)
+# OpenCV and SimpleITK-ku sila basic libraries keta kooda idhu handle pannidum
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Step 4: Copy requirements first (Optimization trick!)
 COPY requirements.txt .
+
+# Step 5: Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire project
+# Step 6: Copy the rest of the code
 COPY . .
 
-# Streamlit port exposure
+# Step 7: Port exposure
 EXPOSE 8501
 
-# Run the app
+# Step 8: Command
 CMD ["streamlit", "run", "main_dashboard.py", "--server.port=8501", "--server.address=0.0.0.0"]

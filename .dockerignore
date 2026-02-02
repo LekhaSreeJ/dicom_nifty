@@ -1,0 +1,32 @@
+# Git
+.git
+.gitignore
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Streamlit
+.streamlit/
+
+# Medical Data (Idhu dhaan main!)
+# Docker image kulla bulk data poga koodathu, S3 or volumes dhaan use pannanum
+data/
+*.nii.gz
+*.dcm
+*.zip
+
+# IDE/Tools
+.vscode/
+.idea/
+.DS_Store
+
+# Logs and Experiments
+mlruns/
+*.log

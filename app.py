@@ -2,11 +2,17 @@ import streamlit as st
 import os
 import zipfile
 import shutil
+import requests  # FastAPI connect panna idhu venum
+import pandas as pd
+
 # Import both engines
 from src.utils.Dicom_Nifty import convert_memory_safe
 from src.utils.Nifty_Dicom import convert_nifti_to_dicom
 
 st.set_page_config(page_title="PEP Medical AI Portal", page_icon="🧠", layout="wide")
+
+# --- API CONFIG ---
+API_URL = "http://localhost:8000/predict" # Docker-compose-la port 8000-nu irukkum
 
 # Sidebar for Navigation
 st.sidebar.title("📑 Control Center")
@@ -18,15 +24,25 @@ def cleanup():
         if os.path.exists(folder):
             shutil.rmtree(folder)
 
+# API Request Function
+def get_pep_prediction(file_path):
+    try:
+        with open(file_path, "rb") as f:
+            files = {"file": f}
+            response = requests.post(API_URL, files=files)
+            return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
 # --- PAGE 1: DICOM TO NIFTI ---
 if page == "DICOM to NIfTI (Standard)":
-    st.title("🧠 DICOM to NIfTI Converter")
-    st.info("Upload a ZIP file containing DICOM slices to generate a 3D NIfTI volume.")
+    st.title("🧠 DICOM to NIfTI & PEP Inference")
+    st.info("Upload a ZIP file containing DICOM slices to generate a 3D NIfTI volume and get AI analysis.")
     
     uploaded_zip = st.file_uploader("Upload DICOM ZIP", type="zip")
     
     if uploaded_zip:
-        if st.button("Start Conversion 🚀"):
+        if st.button("Start Conversion & Analyze 🚀"):
             with st.spinner("Processing..."):
                 cleanup() # Clear old files
                 os.makedirs("temp_data", exist_ok=True)
@@ -40,12 +56,33 @@ if page == "DICOM to NIfTI (Standard)":
                 with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                     zip_ref.extractall(extract_dir)
                 
-                # 2. Convert
+                # 2. Convert to NIfTI
                 output_nifti = "temp_data/output.nii.gz"
                 success, message = convert_memory_safe(extract_dir, output_nifti)
                 
                 if success:
                     st.success("✅ Conversion Complete!")
+                    
+                    # --- NEW: Call FastAPI for PEP Analysis ---
+                    st.subheader("📊 Probability Elimination Pipeline (PEP) Results")
+                    prediction_data = get_pep_prediction(output_nifti)
+                    
+                    if "probabilities" in prediction_data:
+                        probs = prediction_data["probabilities"]
+                        # Logic to highlight the top class
+                        top_class = max(probs, key=probs.get)
+                        st.markdown(f"### Most Likely Case: **{top_class}**")
+                        
+                        # Graph Visualization
+                        df = pd.DataFrame(list(probs.items()), columns=['Disease Class', 'Probability'])
+                        st.bar_chart(df.set_index('Disease Class'))
+                        
+                        # Data Table
+                        st.table(df)
+                    else:
+                        st.warning("Could not fetch AI analysis. Check if Backend is running.")
+
+                    # Download button at the end
                     with open(output_nifti, "rb") as f:
                         st.download_button("Download NIfTI (.nii.gz)", f, file_name="output.nii.gz")
                 else:
@@ -64,18 +101,15 @@ elif page == "NIfTI to DICOM (Inverse)":
                 cleanup()
                 os.makedirs("temp_data", exist_ok=True)
                 
-                # 1. Save NIfTI
                 nifti_path = f"temp_data/{uploaded_nifti.name}"
                 with open(nifti_path, "wb") as f:
                     f.write(uploaded_nifti.getbuffer())
                 
-                # 2. Convert
                 output_dicom_dir = "temp_data/dicom_output"
                 success, message = convert_nifti_to_dicom(nifti_path, output_dicom_dir)
                 
                 if success:
                     st.success(message)
-                    # 3. Zip the output DICOMs for download
                     zip_results = "temp_data/converted_dicoms.zip"
                     with zipfile.ZipFile(zip_results, 'w') as zipf:
                         for root, _, files in os.walk(output_dicom_dir):

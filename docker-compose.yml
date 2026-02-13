@@ -1,15 +1,13 @@
 version: '3.8'
 services:
-  backend:
+  pep-app:
     build: .
-    command: uvicorn api:app --host 0.0.0.0 --port 8000
-    ports:
-      - "8000:8000"
-  
-  frontend:
-    build: .
-    command: streamlit run main_dashboard.py --server.port=8501 --server.address=0.0.0.0
     ports:
       - "8501:8501"
-    depends_on:
-      - backend
+    shm_size: '2gb' # Very important for PyTorch/Numpy 3D data
+    deploy:
+      resources:
+        limits:
+          memory: 4G # Minimum 4GB for 3D processing
+    volumes:
+      - .:/app

@@ -121,4 +121,4 @@ with col2:
 
 # Footer
 st.divider()
-st.caption("Developed by Lekha Sree J | 50+ LPA Career Comeback Project 2026")
+st.caption("Developed by Lekha Sree J")

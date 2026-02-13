@@ -5,7 +5,7 @@ from pathlib import Path
 # Fix: Streamlit Cloud path recognition for 'src' folder
 root_path = str(Path(__file__).parent)
 if root_path not in sys.path:
-    sys.path.append(root_path)
+    sys.path.insert(0, root_path)
 
 import streamlit as st
 import nibabel as nib

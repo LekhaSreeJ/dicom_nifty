@@ -1,7 +1,9 @@
 import torch
 import SimpleITK as sitk
 import numpy as np
-from src.components.model_trainer import PEPNet3D
+import os
+# Fix: Relative import for package recognition
+from .model_trainer import PEPNet3D
 
 class PEPInference:
     def __init__(self, model_dir="models/"):
@@ -9,33 +11,45 @@ class PEPInference:
         self.classes = ['normal', 'stroke', 'tumor', 'ms', 'infection']
         self.models = {}
 
-        # 5 binary models-aiyum load panrom
+        # 5 binary models load logic
         for cls in self.classes:
             model = PEPNet3D(num_classes=1).to(self.device)
-            model_path = f"{model_dir}pep_binary_{cls}.pth"
-            model.load_state_dict(torch.load(model_path, map_location=self.device))
-            model.eval()
-            self.models[cls] = model
+            # Safe path joining
+            model_path = os.path.join(model_dir, f"pep_binary_{cls}.pth")
+            
+            if os.path.exists(model_path):
+                model.load_state_dict(torch.load(model_path, map_location=self.device))
+                model.eval()
+                self.models[cls] = model
+            else:
+                print(f"Warning: {model_path} missing!")
 
     def predict(self, nifty_path):
         # 1. Image Preprocessing
-        img = sitk.GetArrayFromImage(sitk.ReadImage(nifty_path))
+        sitk_img = sitk.ReadImage(nifty_path)
+        img = sitk.GetArrayFromImage(sitk_img)
+        
+        # Simple Normalization (Very Important for Medical AI)
+        img = (img - np.mean(img)) / (np.std(img) + 1e-8)
+        
+        # 2. Resize/Crop logic (Ensure it matches your model's input size)
+        # If your model trained on 64x64x64, you must resize here. 
+        # For now, converting to tensor:
         img_tensor = torch.tensor(img).float().unsqueeze(0).unsqueeze(0).to(self.device)
 
         probabilities = {}
         
-        # 2. Get probabilities from all models
+        # 3. Get probabilities
         with torch.no_grad():
             for cls, model in self.models.items():
                 output = model(img_tensor)
                 prob = torch.sigmoid(output).item()
                 probabilities[cls] = prob
 
-        # 3. Probability Elimination Logic (If-Else)
-        if probabilities['normal'] > 0.80:
+        # 4. PEP Elimination Logic
+        if probabilities.get('normal', 0) > 0.80:
             final_pred = "Normal"
         else:
-            # Normal illana, bakki irukura 4-la edhu high probability-nu paarkanum
             remaining = {k: v for k, v in probabilities.items() if k != 'normal'}
             final_pred = max(remaining, key=remaining.get).capitalize()
 
